@@ -124,26 +124,114 @@ SELECT D.DepartmentName, SUM(P.Salary) FROM PERSON P RIGHT JOIN DEPT D ON P.Depa
 SELECT D.DepartmentName FROM PERSON P RIGHT JOIN DEPT D ON P.DepartmentID = D.DepartmentID WHERE P.PersonID IS NULL
 
 --2. List out department names in which more than two persons are working.
-SELECT DEPT.DepartmentName,COUNT(PERSON.PersonID) as PersonCount 
-FROM PERSON JOIN DEPT
-ON PERSON.DepartmentID=DEPT.DepartmentID
-GROUP BY DEPT.DepartmentName
-HAVING COUNT(PERSON.PersonID)>2
+SELECT D.DepartmentName, COUNT(P.PersonID) FROM PERSON P JOIN DEPT D ON P.DepartmentID = D.DepartmentID GROUP BY D.DepartmentName HAVING COUNT(P.PersonID)  > 2
 
 --3. Give a 10% increment in the computer department employee’s salary.
-SELECT PERSON.PersonName,PERSON.Salary
-FROM PERSON JOIN DEPT
-ON PERSON.DepartmentID=DEPT.DepartmentID
-WHERE DEPT.DepartmentName='Computer'
+UPDATE P
+SET P.SALARY = P.SALARY * 1.10
+FROM PERSON P JOIN DEPT D ON P.DepartmentID = D.DepartmentID
+WHERE D.DepartmentName = 'COMPUTER';
 
-UPDATE PERSON
-SET Salary=SALARY+SALARY*0.1
-FROM PERSON JOIN DEPT
-ON PERSON.DepartmentID=DEPT.DepartmentID
-WHERE DEPT.DepartmentName='Computer'
+SELECT PersonName ,SALARY FROM PERSON WHERE DepartmentID IN (
+	SELECT DepartmentID FROM DEPT WHERE DepartmentName = 'COMPUTER'
+)
 
-SELECT PERSON.PersonName,PERSON.Salary
-FROM PERSON JOIN DEPT
-ON PERSON.DepartmentID=DEPT.DepartmentID
-WHERE DEPT.DepartmentName='Computer'
 
+--ADVANCE SQL:
+
+-- Create Author table
+CREATE TABLE Author (
+    AuthorID INT PRIMARY KEY,
+    AuthorName VARCHAR(100) NOT NULL,
+    Country VARCHAR(50) NULL
+);
+
+-- Create Publisher table
+CREATE TABLE Publisher (
+    PublisherID INT PRIMARY KEY,
+    PublisherName VARCHAR(100) NOT NULL UNIQUE,
+    City VARCHAR(50) NOT NULL
+);
+
+-- Create Book table with Foreign Keys
+CREATE TABLE Book (
+    BookID INT PRIMARY KEY,
+    Title VARCHAR(200) NOT NULL,
+    AuthorID INT NOT NULL,
+    PublisherID INT NOT NULL,
+    Price DECIMAL(8, 2) NOT NULL,
+    PublicationYear INT NOT NULL,
+    FOREIGN KEY (AuthorID) REFERENCES Author(AuthorID),
+    FOREIGN KEY (PublisherID) REFERENCES Publisher(PublisherID)
+);
+
+-- Insert into Author
+INSERT INTO Author (AuthorID, AuthorName, Country)
+VALUES
+(1, 'Chetan Bhagat', 'India'),
+(2, 'Arundhati Roy', 'India'),
+(3, 'Amish Tripathi', 'India'),
+(4, 'Ruskin Bond', 'India'),
+(5, 'Jhumpa Lahiri', 'India'),
+(6, 'Paulo Coelho', 'Brazil'),
+(7, 'Sudha Murty', 'India'),
+(8, 'Vikram Seth', 'India'),
+(9, 'Kiran Desai', 'India'); -- Author with no books
+
+-- Insert into Publisher
+INSERT INTO Publisher (PublisherID, PublisherName, City)
+VALUES
+(1, 'Rupa Publications', 'New Delhi'),
+(2, 'Penguin India', 'Gurugram'),
+(3, 'HarperCollins India', 'Noida'),
+(4, 'Aleph Book Company', 'New Delhi'),
+(5, 'Westland', 'Chennai');
+
+-- Insert into Book
+INSERT INTO Book (BookID, Title, AuthorID, PublisherID, Price, PublicationYear)
+VALUES
+(101, 'Five Point Someone', 1, 1, 250.00, 2004),
+(102, 'The God of Small Things', 2, 2, 350.00, 1997),
+(103, 'Immortals of Meluha', 3, 3, 300.00, 2010),
+(104, 'The Blue Umbrella', 4, 1, 180.00, 1980),
+(105, 'The Lowland', 5, 2, 400.00, 2013),
+(106, 'Revolution 2020', 1, 1, 275.00, 2011),
+(107, 'Sita: Warrior of Mithila', 3, 3, 320.00, 2017),
+(108, 'The Room on the Roof', 4, 4, 200.00, 1956),
+(109, 'A Suitable Boy', 8, 2, 600.00, 1993),
+(110, 'Scion of Ikshvaku', 3, 5, 350.00, 2015),
+(111, 'Wise and Otherwise', 7, 2, 210.00, 2002),
+(112, '2 States', 1, 1, 260.00, 2009);
+
+
+--PART-A:
+
+--1. List all books with their authors.
+SELECT B.Title, A.AuthorName FROM Book B JOIN Author A ON B.AuthorID = A.AuthorID
+
+--2. List all books with their publishers.
+SELECT B.Title, P.PublisherName FROM Book B JOIN Publisher P ON B.PublisherID = P.PublisherID 
+
+--3. List all books with their authors and publishers.
+SELECT B.Title, A.AuthorName, P.PublisherName FROM Author A JOIN Book B ON A.AuthorID = B.AuthorID JOIN Publisher P ON B.PublisherID = P.PublisherID
+
+--4. List all books published after 2010 with their authors and publisher and price.
+SELECT B.Title, A.AuthorName, P.PublisherName, B.Price FROM Author A JOIN Book B ON A.AuthorID = B.AuthorID JOIN Publisher P ON B.PublisherID = P.PublisherID WHERE B.PublicationYear > 2010
+
+--5. List all authors and the number of books they have written.
+SELECT A.AuthorName, COUNT(B.BookID) FROM Author A LEFT JOIN Book B ON A.AuthorID = B.AuthorID LEFT JOIN Publisher P ON B.PublisherID = P.PublisherID GROUP BY A.AuthorName
+
+--6. List all publishers and the total price of books they have published.
+SELECT P.PublisherName, SUM(B.Price) FROM Author A JOIN Book B ON A.AuthorID = B.AuthorID JOIN Publisher P ON B.PublisherID = P.PublisherID GROUP BY P.PublisherName
+
+--7. List authors who have not written any books.
+SELECT A.AuthorName FROM Author A LEFT JOIN Book B ON A.AuthorID = B.AuthorID WHERE B.BookID IS NULL
+
+--8. Display total number of Books and Average Price of every Author.
+SELECT A.AuthorName, COUNT(B.BookID), AVG(B.Price)  FROM Author A RIGHT JOIN Book B ON A.AuthorID = B.AuthorID GROUP BY A.AuthorName
+
+--9. lists each publisher along with the total number of books they have published, sorted from highest to lowest.
+SELECT P.PublisherName, COUNT(B.BookID) FROM Book B JOIN Publisher P ON B.PublisherID = P.PublisherID GROUP BY P.PublisherName ORDER BY COUNT(B.BookID) DESC
+
+--10. Display number of books published each year.
+SELECT B.PublicationYear, COUNT(B.BookID) FROM Book B JOIN Publisher P ON B.PublisherID = P.PublisherID GROUP BY B.PublicationYear
