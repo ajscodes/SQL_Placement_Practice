@@ -235,3 +235,140 @@ SELECT P.PublisherName, COUNT(B.BookID) FROM Book B JOIN Publisher P ON B.Publis
 
 --10. Display number of books published each year.
 SELECT B.PublicationYear, COUNT(B.BookID) FROM Book B JOIN Publisher P ON B.PublisherID = P.PublisherID GROUP BY B.PublicationYear
+
+
+--PART-B:
+
+--1. List the publishers whose total book prices exceed 500, ordered by the total price.
+SELECT P.PublisherName, SUM(B.Price) AS 'TOTAL PRICE' FROM Book B JOIN Publisher P ON B.PublisherID = P.PublisherID GROUP BY P.PublisherName HAVING SUM(B.Price) > 500 ORDER BY SUM(B.Price)
+
+--2. List most expensive book for each author, sort it with the highest price.
+SELECT A.AuthorName, B.Title, B.Price FROM Author A JOIN Book B ON A.AuthorID = B.AuthorID WHERE B.Price = (SELECT MAX(B2.PRICE) FROM BOOK B2 WHERE B2.AuthorID = A.AuthorID) ORDER BY B.Price DESC
+
+
+--PART-C:
+
+--1. Create Table Schema Your first task is to create the database structure. Implement the following 6-table schema. You must define all Primary Key, Foreign Key, and other constraints necessary to make the database functional and maintain data integrity.
+--Emp_info(Eid, Ename, Did, Cid, Salary, Experience)
+--Dept_info(Did, Dname)
+--City_info(Cid, Cname, Did)
+--District(Did, Dname, Sid)
+--State(Sid, Sname, Cid)
+--Country(Cid, Cname)
+
+CREATE TABLE COUNTRY(
+	CID INT PRIMARY KEY,
+	CNAME VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE STATE(
+	SID INT PRIMARY KEY,
+	SNAME VARCHAR(50) NOT NULL,
+	CID INT NOT NULL,
+	FOREIGN KEY (CID) REFERENCES COUNTRY(CID)
+);
+
+CREATE TABLE DISTRICT(
+	DID INT PRIMARY KEY,
+	DNAME VARCHAR(50) NOT NULL,
+	SID INT NOT NULL,
+	
+	FOREIGN KEY (SID) REFERENCES STATE(SID)
+);
+
+CREATE TABLE CITY_INFO(
+	CID INT PRIMARY KEY,
+	CNAME VARCHAR(50) NOT NULL,
+	DID INT NOT NULL,
+
+	FOREIGN KEY (DID) REFERENCES DISTRICT(DID)
+);
+
+CREATE TABLE DEPT_INFO(
+	DID INT PRIMARY KEY,
+	DNAME VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE EMP_INFO(
+	EID INT PRIMARY KEY,
+	ENAME VARCHAR(50),
+	DID INT NOT NULL,
+	CID INT NOT NULL,
+	SALARY DECIMAL(10,2) NOT NULL,
+	EXPERIENCE INT NOT NULL,
+
+	FOREIGN KEY (DID) REFERENCES DEPT_INFO(DID),
+	FOREIGN KEY (CID) REFERENCES CITY_INFO(CID)
+);
+
+
+--2. Insert Data & Test Validation Once your tables are created, perform the following:
+--Insert 5 valid records into each of the 6 tables.
+--After inserting valid data, write and execute at least one INSERT statement that violates a foreign key constraint you set up. Observe and understand the error message produced by the database.
+
+INSERT INTO COUNTRY VALUES
+	(1, 'India'),
+	(2, 'USA'),
+	(3, 'Canada'),
+	(4, 'UK'),
+	(5, 'Australia');
+
+INSERT INTO State VALUES
+(101, 'Gujarat', 1),
+(102, 'Maharashtra', 1),
+(103, 'California', 2),
+(104, 'Ontario', 3),
+(105, 'New South Wales', 5);
+
+
+INSERT INTO District VALUES
+(201, 'Rajkot', 101),
+(202, 'Ahmedabad', 101),
+(203, 'Mumbai', 102),
+(204, 'Los Angeles', 103),
+(205, 'Toronto', 104);
+
+
+INSERT INTO City_info VALUES
+(301, 'Rajkot', 201),
+(302, 'Sanand', 202),
+(303, 'Bandra', 203),
+(304, 'Santa Monica', 204),
+(305, 'North York', 205);
+
+INSERT INTO Dept_info VALUES
+(10, 'IT'),
+(20, 'HR'),
+(30, 'Sales'),
+(40, 'Finance'),
+(50, 'Marketing');
+
+
+INSERT INTO Emp_info VALUES
+(1, 'Anil Sharma', 10, 301, 80000, 5),
+(2, 'Priya Singh', 20, 303, 65000, 3),
+(3, 'Rajesh Kumar', 30, 302, 70000, 4),
+(4, 'Meena Patel', 10, 301, 82000, 6),
+(5, 'Suresh Desai', 40, 304, 95000, 8);
+
+--FK VIOLATION
+INSERT INTO Emp_info VALUES
+(6, 'Fake Employee', 99, 301, 50000, 2);
+
+
+--3. Display Full Employee Report.
+SELECT 
+    e.Ename AS EmpName,
+    d.Dname AS DeptName,
+    e.Salary,
+    e.Experience,
+    c.Cname AS CityName,
+    dis.Dname AS DistrictName,
+    s.Sname AS StateName,
+    co.Cname AS CountryName
+FROM Emp_info e
+JOIN Dept_info d ON e.Did = d.Did
+JOIN City_info c ON e.Cid = c.Cid
+JOIN District dis ON c.Did = dis.Did
+JOIN State s ON dis.Sid = s.Sid
+JOIN Country co ON s.Cid = co.Cid;
