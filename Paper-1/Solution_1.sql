@@ -105,44 +105,101 @@ order by Salary desc
 
 
 --**Question 5: List top 3 employees department wise as per salaries.
-with RankedEmp AS (
-	select 
-	from Employee e join 
+with RankedEmp as (
+	select d.DeptName, e.Name, e.Salary, DENSE_RANK() over(partition by d.deptname order by e.salary desc) as DeptRank
+ 	from Employee e join Department d on e.DeptID = d.DeptID
 )
+select DeptName, Name, Salary, DeptRank
+from RankedEmp where DeptRank <= 3
 
 
+SELECT
+    D.DeptName,
+    E.Name,
+    E.Salary
+FROM Employee E
+JOIN Department D ON E.DeptID = D.DeptID
+WHERE (
+    SELECT COUNT(*)
+    FROM Employee E2
+    WHERE E2.DeptID = E.DeptID
+      AND E2.Salary > E.Salary
+) < 3
+
+
+--Question 6: List City with Employee Count.
 select e.City, count(e.EmpID)
 from Department d join Employee e on d.DeptID = e.DeptID
 group by e.City
 
-select City, max(Salary) as MaxSal, MIN(Salary) as MinSal, avg(salary) as AvgSal
+
+SELECT
+    City,
+    COUNT(*) AS EmployeeCount
+FROM Employee
+GROUP BY City;
+
+
+--Question 7: List City Wise Maximum, Minimum & Average Salaries & Give Proper Name As MaxSal, MinSal & AvgSal.
+select City, max(Salary) as MaxSal, MIN(Salary) as MinSal, cast(avg(salary) as decimal(10,2)) as AvgSal
 from Employee 
 group by City
 
+
+--Question 8: List Department wise City wise Employee Count.
 select DeptName, City, COUNT(EmpID)
 from Employee join Department on Employee.DeptID = Department.DeptID
 group by DeptName, City
 
+
+--Question 9: List Departments with more than 9 employees.
 select d.DeptName, count(e.EmpID)
 from Employee e join Department d on e.DeptID = d.DeptID
 group by d.DeptName having COUNT(e.EmpID) > 9
 
-select e.EmpID, 1.10 * e.Salary as New_Sal
-from Employee e join Department d on e.DeptID = d.DeptID
-where d.DeptName in ('Mechanical')
 
+--**Question 10: Give 10% increment in salary to all employees who belongs to Mechanical Department.
+select * from Employee join Department on Employee.DeptID = Department.DeptID where Department.DeptName = 'Mechanical'
+
+update e
+set e.Salary = e.Salary * 1.10
+from Employee e join Department d on e.DeptID = d.DeptID
+where d.DeptName = 'Mechanical'
+
+select * from Employee join Department on Employee.DeptID = Department.DeptID where Department.DeptName = 'Mechanical'
+
+
+--Question 11: Update City of Sandeep from Mumbai to Pune having 101 as Employee ID.
 Update Employee
 set City = 'Pune'
-where EmpID = 101
+WHERE EmpID = 101 AND Name = 'Sandeep' AND City = 'Mumbai';
 
 select * from Employee
 
---12 pending
 
---13 pending
+--**Question 12: Delete all the employees who belongs to HR Department & Salary is more than 45,000.
+delete e
+from Employee e join Department d on e.DeptID = d.DeptID
+where d.DeptName = 'hr' and e.Salary > 45000
 
-select d.DeptName, avg(e.Salary)
+
+--**Question 13: List Employees with same name with occurrence of name.
+select name, count(*) 
+from Employee 
+group by name having count(*) > 1
+
+
+--Question 14: List Department wise Average Salary.
+select d.DeptName,  CAST(AVG(E.Salary) AS DECIMAL(10, 2)) AS AverageSalary
 from Employee e join Department d on e.DeptID = d.DeptID
 group by d.DeptName 
 
---15 pending 
+
+--**Question 15: List City wise highest paid employee.
+with RankedFunction as (
+	select City, Name, Salary, DENSE_RANK() over(partition by city order by salary desc) as RankingCount
+	from Employee 
+)
+
+select City, Name, Salary
+from RankedFunction where RankingCount = 1
